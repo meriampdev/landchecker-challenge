@@ -12,6 +12,36 @@ Install Docker Engine/Desktop with a stable Docker Compose v2 release. From the 
 docker compose up --build
 ```
 
+### If startup fails
+
+Docker development and automatic reload
+
+Rails and Vite reload source changes automatically.
+
+**On macOS, Docker Desktop needs access to the project folder.** If startup fails with `exec user process caused: operation not permitted` or `EPERM` opening `/app/package.json`, check folder permissions. Both services mount the checkout into `/app`, so restricted access can affect them even after a successful build.
+
+1. Open **System Settings → Privacy & Security → Files and Folders** and allow Docker Desktop access to the project’s location, if listed.
+2. In **Docker Desktop → Settings → Resources → File Sharing**, ensure the checkout’s parent directory is shared.
+3. Restart Docker Desktop, then run:
+
+```sh
+docker compose up --build --force-recreate
+```
+
+Alternatively, move the checkout outside protected Desktop/Documents folders—for example, to `~/Projects/landchecker-challenge`—and ensure that location is shared with Docker Desktop.
+
+If frontend edits are not detected, enable polling:
+
+```sh
+VITE_USE_POLLING=true docker compose up -d --force-recreate frontend
+```
+
+After changing frontend dependencies, rebuild and refresh the dependency volume:
+
+```sh
+docker compose up -d --build --force-recreate --renew-anon-volumes frontend
+```
+
 Open **http://localhost:5173** after the services are ready. No host Ruby, Node or
 PostgreSQL installation or `.env` file is required. The first build needs registry
 access. Ports 3000 and 5173 must be available. On macOS, Docker Desktop must have
