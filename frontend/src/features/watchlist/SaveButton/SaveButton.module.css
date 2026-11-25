@@ -1,0 +1,41 @@
+.control {
+  position: absolute;
+  right: 11px;
+  top: 11px;
+  z-index: 1;
+}
+.control > button:first-child {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #f8f7f2f2;
+  color: #17201c;
+}
+.control > button[aria-pressed="true"] {
+  color: #9c3d37;
+}
+.heart {
+  font-size: 25px;
+  line-height: 1;
+}
+.label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.control p {
+  background: white;
+  padding: 8px;
+  max-width: 200px;
+  font-size: 12px;
+}
+.control > button:not(:first-child) {
+  font-size: 10px;
+  max-width: 120px;
+}

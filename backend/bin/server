@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+attempt=0
+until bundle exec ruby -r pg -e 'PG.connect(ENV.fetch("DATABASE_URL")).close'; do
+  attempt=$((attempt + 1))
+  [ "$attempt" -lt 30 ] || exit 1
+  sleep 2
+done
+bin/rails db:prepare
+bin/rails db:seed
+exec bin/rails server -b 0.0.0.0 -p 3000

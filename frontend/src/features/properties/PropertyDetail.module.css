@@ -1,0 +1,12 @@
+.detail {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 24px 72px;
+}
+.detail h1 {
+  font-size: clamp(30px, 5vw, 48px);
+  margin: 24px 0;
+}
+.detail > p {
+  margin-top: 24px;
+}
