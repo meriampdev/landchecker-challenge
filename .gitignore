@@ -8,3 +8,5 @@ coverage/
 backend/vendor/bundle/
 backend/tmp/*
 backend/log/*
+
+*.tsbuildinfo

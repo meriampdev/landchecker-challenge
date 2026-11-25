@@ -1,3 +1,4 @@
+import { useBrowseRoute, useRoute } from "../../shared/navigation";
 import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { http, ApiError } from "../../shared/http";
@@ -11,6 +12,7 @@ export function PropertyDetail({
   id: number;
   action: (property: Property) => ReactNode;
 }) {
+  const browseRoute = useBrowseRoute(useRoute());
   const query = useQuery({
     queryKey: ["property-detail", id],
     queryFn: ({ signal }) =>
@@ -20,7 +22,7 @@ export function PropertyDetail({
   });
   return (
     <section className={styles.detail}>
-      <a href="#/browse">← Back to explore homes</a>
+      <a href={`#${browseRoute}`}>← Back to explore homes</a>
       {query.isPending ? (
         <p role="status">Loading listing…</p>
       ) : query.isError ? (

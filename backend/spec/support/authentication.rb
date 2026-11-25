@@ -1,5 +1,6 @@
 module AuthenticationHelpers
   def csrf_headers
+    host! "localhost:5173"
     get "/api/v1/csrf"
     { "X-CSRF-Token" => response.parsed_body.fetch("csrf_token"), "Origin" => "http://localhost:5173", "Host" => "localhost:5173" }
   end

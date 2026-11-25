@@ -64,11 +64,13 @@ without silently replaying a mutation. No public endpoint writes property prices
 | DELETE /session | Authenticated with CSRF, no body | 200 `{ "user": null, "csrf_token": "new-anonymous-token" }`; session reset, remote cable disconnected |
 | GET /me | Authenticated | 200 `{ "user": User }`; anonymous/expired 401 |
 | GET /properties | Public, validated query below | 200 `{ "properties": [Property], "meta": Pagination }` |
-| GET /watchlist | Authenticated | 200 `{ "properties": [Property] }`, stable property ID order; all owned watches |
+| GET /watchlist | Authenticated | 200 `{ "properties": [Property], "saved_ids": [ID], "meta": { "page": 1, "per_page": 12, "total_count": 14, "total_pages": 2 } }`; stable property ID order, 12 listings per page; all owned membership IDs |
 | PUT /watchlist/:property_id | Authenticated with CSRF; no body required | 200 `{ "property": Property }` whether created or already saved |
 | DELETE /watchlist/:property_id | Authenticated with CSRF; no body | 204 empty whether own entry exists or already removed |
 
 PUT/DELETE accept only a scalar positive property ID in the path and no owner fields. Reject
+`GET /watchlist` accepts only an optional positive integer `page` query (up to nine digits), clamped to the last available page. Writes accept no query/body overrides.
+
 `user_id`/`watchlist_entry_id`/owner overrides in query or body with 400; no endpoint accepts a
 watchlist entry ID. Existing property missing from current user's watches is not another
 user's resource: DELETE succeeds as a no-op. A nonexistent property yields 404 for both methods.

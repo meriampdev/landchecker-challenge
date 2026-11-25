@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderQuery, exampleProperty } from "../../../test/render";
 import { PropertyList } from "./PropertyList";
@@ -65,8 +65,10 @@ it("restores filters and page from URLs and responds to browser navigation", asy
   await waitFor(() =>
     expect(window.location.hash).toContain("location=Richmond&page=4"),
   );
-  window.history.replaceState(null, "", "#/browse?location=Richmond&page=2");
-  window.dispatchEvent(new HashChangeEvent("hashchange"));
+  act(() => {
+    window.history.replaceState(null, "", "#/browse?location=Richmond&page=2");
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+  });
   expect(
     await screen.findByText("Showing 13–24 of 100 results"),
   ).toBeInTheDocument();

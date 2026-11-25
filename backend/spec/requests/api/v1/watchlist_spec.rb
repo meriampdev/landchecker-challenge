@@ -109,3 +109,27 @@ RSpec.describe "Competing watch saves", type: :request do
     expect(user.watchlist_entries.where(property: property).count).to eq(1)
   end
 end
+
+RSpec.describe "Watchlist pagination", type: :request do
+  it "bounds listing payloads, retains all saved IDs and preloads relationships" do
+    user = make_user
+    properties = 14.times.map { make_property }
+    properties.each { |property| user.watchlist_entries.create!(property: property) }
+    headers = sign_in(user)
+    queries = []
+    listener = ->(*args) { payload = args.last; queries << payload[:sql] unless payload[:cached] || payload[:name] == "SCHEMA" }
+    ActiveSupport::Notifications.subscribed(listener, "sql.active_record") do
+      get "/api/v1/watchlist", headers: headers
+    end
+    expect(response.parsed_body["properties"].length).to eq(12)
+    expect(response.parsed_body["saved_ids"]).to eq(properties.map(&:id))
+    expect(queries.grep(/SELECT.*FROM "properties"/).length).to eq(1)
+    get "/api/v1/watchlist?page=2", headers: headers
+    expect(response.parsed_body["properties"].map { |property| property["id"] }).to eq(properties.last(2).map(&:id))
+    expect(response.parsed_body["meta"]).to include("page" => 2, "total_count" => 14)
+    get "/api/v1/watchlist?page=999", headers: headers
+    expect(response.parsed_body["meta"]["page"]).to eq(2)
+    get "/api/v1/watchlist?page=invalid", headers: headers
+    expect(response).to have_http_status(:unprocessable_content)
+  end
+end

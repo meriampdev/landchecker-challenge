@@ -20,3 +20,17 @@ RSpec.describe "Sessions", type: :request do
     expect(response.body).not_to include("password_digest")
   end
 end
+
+RSpec.describe "Session expiry", type: :request do
+  include ActiveSupport::Testing::TimeHelpers
+  it "denies identity and private data after the session deadline" do
+    headers = sign_in(make_user)
+    travel 13.hours do
+      get "/api/v1/me", headers: headers
+      expect(response).to have_http_status(:unauthorized)
+      get "/api/v1/watchlist", headers: headers
+      expect(response).to have_http_status(:unauthorized)
+      expect(response.parsed_body).to have_key("error")
+    end
+  end
+end

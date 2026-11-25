@@ -1,6 +1,10 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { renderQuery, exampleProperty } from "../../../test/render";
+import {
+  renderQuery,
+  exampleProperty,
+  querySuccess,
+} from "../../../test/render";
 import { SaveButton } from "./SaveButton";
 import { useAuth } from "../../auth";
 import { useWatchlist } from "../queries";
@@ -13,11 +17,9 @@ it("retains confirmed saved state when removal fails", async () => {
     user: { id: 1, email: "alex@example.com" },
     mutate: (fn: (token: string) => Promise<unknown>) => fn("token"),
   } as ReturnType<typeof useAuth>);
-  jest.mocked(useWatchlist).mockReturnValue({
-    data: { properties: [exampleProperty] },
-    isPending: false,
-    isError: false,
-  } as ReturnType<typeof useWatchlist>);
+  jest
+    .mocked(useWatchlist)
+    .mockReturnValue(querySuccess({ properties: [exampleProperty] }));
   jest
     .mocked(changeWatch)
     .mockRejectedValue(new Error("Could not save change"));
@@ -48,4 +50,20 @@ it("redirects anonymous saving with the intended property and return page", asyn
   expect(window.location.hash).toContain("/login?");
   expect(params.get("save")).toBe("42");
   expect(params.get("returnTo")).toBe("/browse");
+});
+
+it("recognizes saved properties outside the loaded watchlist page", () => {
+  jest
+    .mocked(useAuth)
+    .mockReturnValue({
+      user: { id: 1, email: "alex@example.com" },
+      ready: true,
+    } as ReturnType<typeof useAuth>);
+  jest
+    .mocked(useWatchlist)
+    .mockReturnValue(querySuccess({ properties: [], saved_ids: [99] }));
+  renderQuery(<SaveButton id={99} />);
+  expect(
+    screen.getByRole("button", { name: "Remove property 99" }),
+  ).toHaveAttribute("aria-pressed", "true");
 });

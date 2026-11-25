@@ -1,3 +1,4 @@
+import { navigate } from "../../../shared/navigation";
 import { useState, type FormEvent } from "react";
 import { useAuth } from "../AuthProvider";
 import styles from "./LoginForm.module.css";
@@ -76,6 +77,18 @@ export function LoginForm({
       </button>
       <a
         href={`#/${createAccount ? "login" : "register"}${window.location.hash.includes("?") ? "?" + window.location.hash.split("?")[1] : ""}`}
+        onClick={(event) => {
+          if (
+            event.button ||
+            event.metaKey ||
+            event.ctrlKey ||
+            event.shiftKey ||
+            event.altKey
+          )
+            return;
+          event.preventDefault();
+          navigate(event.currentTarget.hash.slice(1), true);
+        }}
       >
         {createAccount
           ? "Already have an account? Log in"

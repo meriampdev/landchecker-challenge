@@ -1,6 +1,7 @@
 class ApplicationController < ActionController::API
   include ActionController::Cookies
   include ActionController::RequestForgeryProtection
+  self.forgery_protection_origin_check = true
   protect_from_forgery with: :exception
   before_action :require_json
   rescue_from ActionController::InvalidAuthenticityToken do

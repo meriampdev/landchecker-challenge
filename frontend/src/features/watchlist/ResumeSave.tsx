@@ -26,7 +26,7 @@ export function ResumeSave({
         // PUT ensures membership, even if already saved; never replay a toggle.
         if (id) await auth.mutate((token) => changeWatch(id, false, token));
         await client.invalidateQueries({ queryKey: watchKey(userId) });
-        navigate(destination);
+        navigate(destination, true);
       } catch (e) {
         setError((e as Error).message);
       }
@@ -44,7 +44,7 @@ export function ResumeSave({
       >
         Retry saving
       </button>
-      <button onClick={() => navigate(destination)}>
+      <button onClick={() => navigate(destination, true)}>
         Continue without saving
       </button>
     </div>

@@ -21,12 +21,12 @@ export function LiveUpdates() {
   const state = useRef({ auth, watch });
   state.current = { auth, watch };
   const active = useRef(true);
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    active.current = true;
+    return () => {
       active.current = false;
-    },
-    [],
-  );
+    };
+  }, []);
   async function reconcile() {
     try {
       await state.current.auth.refresh();
@@ -47,7 +47,10 @@ export function LiveUpdates() {
     const user = state.current.auth.user;
     if (
       !user ||
-      !state.current.watch.data?.properties.some((p) => p.id === change.id)
+      !(
+        state.current.watch.data?.saved_ids?.includes(change.id) ??
+        state.current.watch.data?.properties.some((p) => p.id === change.id)
+      )
     )
       return;
     await Promise.all([
@@ -56,7 +59,10 @@ export function LiveUpdates() {
     ]);
     if (
       !active.current ||
-      !state.current.watch.data?.properties.some((p) => p.id === change.id)
+      !(
+        state.current.watch.data?.saved_ids?.includes(change.id) ??
+        state.current.watch.data?.properties.some((p) => p.id === change.id)
+      )
     )
       return;
     const confirmed = client.getQueriesData<{ properties: Property[] }>({
@@ -65,8 +71,7 @@ export function LiveUpdates() {
     const old = confirmed
       .flatMap(([, data]) => data?.properties ?? [])
       .find((p) => p.id === change.id);
-    if (!old || Date.parse(old.updated_at) >= Date.parse(change.updated_at))
-      return;
+    if (old && old.updated_at >= change.updated_at) return;
     void client.invalidateQueries({ queryKey: ["property-detail", change.id] });
     patchProperties(client, change);
     patchWatchlist(client, user.id, change);
@@ -83,7 +88,9 @@ export function LiveUpdates() {
     <aside>
       {(!live.connected || message) && (
         <p role="status" aria-live="polite">
-          {[!live.connected && "Live updates unavailable", message].filter(Boolean).join(" · ")}
+          {[!live.connected && "Live updates unavailable", message]
+            .filter(Boolean)
+            .join(" · ")}
         </p>
       )}
       {!live.connected && (

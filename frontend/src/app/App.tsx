@@ -8,11 +8,13 @@ import {
   requireLogin,
   safeReturn,
   useRoute,
+  useBrowseRoute,
 } from "../shared/navigation";
 import { LiveUpdates } from "./LiveUpdates";
 export function App() {
   const auth = useAuth();
   const route = useRoute();
+  const browseRoute = useBrowseRoute(route);
   const [path, search = ""] = route.split("?");
   const isAuthPage = path === "/login" || path === "/register";
   const detailMatch = /^\/properties\/([1-9][0-9]{0,14})$/.exec(path);
@@ -33,7 +35,7 @@ export function App() {
     setError("");
     try {
       await auth.logout();
-      navigate("/browse");
+      navigate(browseRoute);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -53,7 +55,7 @@ export function App() {
         Skip to content
       </a>
       <header className="site-header">
-        <a href="#/browse" className="brand">
+        <a href={`#${browseRoute}`} className="brand">
           <span className="brand-mark" aria-hidden="true">
             ⌂
           </span>
@@ -61,7 +63,7 @@ export function App() {
         </a>
         <nav aria-label="Main">
           <a
-            href="#/browse"
+            href={`#${browseRoute}`}
             aria-current={path === "/browse" ? "page" : undefined}
           >
             Explore homes
@@ -78,7 +80,10 @@ export function App() {
                 {pending ? "Logging out…" : "Log out"}
               </button>
             ) : (
-              <a className="login-link" href="#/login?returnTo=%2Fbrowse">
+              <a
+                className="login-link"
+                href={`#/login?${new URLSearchParams({ returnTo: safeReturn(route) })}`}
+              >
                 Log in
               </a>
             ))}
@@ -141,7 +146,7 @@ export function App() {
         {path === "/watchlist" && auth.user && <WatchlistPage />}
       </main>
       <footer>
-        <a href="#/browse" className="brand">
+        <a href={`#${browseRoute}`} className="brand">
           Landchecker
         </a>
         <p>Exceptional homes, thoughtfully found.</p>

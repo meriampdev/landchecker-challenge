@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from "react";
-import { navigate, useRoute } from "../../../shared/navigation";
+import { navigate, useRoute, useBrowseRoute } from "../../../shared/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { search } from "../api";
 import type { Filters, Property } from "../types";
@@ -13,8 +13,12 @@ export function PropertyList({
   action: (p: Property) => ReactNode;
 }) {
   const route = useRoute();
-  const [path, searchParams = ""] = route.split("?");
-  const params = new URLSearchParams(path === "/browse" ? searchParams : "");
+  const browseRoute = useBrowseRoute(route);
+  const path = route.split("?")[0];
+  const [, searchParams = ""] = (
+    path === "/browse" ? route : browseRoute
+  ).split("?");
+  const params = new URLSearchParams(searchParams);
   const filters: Filters = {};
   for (const key of [
     "location",
@@ -56,6 +60,7 @@ export function PropertyList({
     queryKey: ["properties", filters, page],
     queryFn: ({ signal }) => search(filters, page, signal),
     retry: false,
+    enabled: path === "/browse",
   });
   useEffect(() => {
     if (
@@ -97,13 +102,19 @@ export function PropertyList({
           navigate(`/browse?${nextParams}`);
           results.current?.scrollIntoView?.({
             block: "start",
-            behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+            behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)")
+              .matches
               ? "auto"
               : "smooth",
           });
         }}
       >
-        <svg className="search-icon" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <svg
+          className="search-icon"
+          viewBox="0 0 32 32"
+          fill="none"
+          aria-hidden="true"
+        >
           <circle cx="14" cy="14" r="10" />
           <path d="m21.5 21.5 7 7" />
         </svg>

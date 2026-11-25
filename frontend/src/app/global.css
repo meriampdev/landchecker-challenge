@@ -351,7 +351,7 @@ footer {
   opacity: 1;
 }
 .search-location input:focus-visible {
-  outline: none;
+  outline: 3px solid #ac6d22;
   outline-offset: 2px;
 }
 .home-search button {

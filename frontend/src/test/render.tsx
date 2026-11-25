@@ -1,5 +1,9 @@
 import { render } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  QueryClient,
+  QueryClientProvider,
+  QueryObserver,
+} from "@tanstack/react-query";
 import type { ReactElement } from "react";
 export function renderQuery(ui: ReactElement) {
   const client = new QueryClient({
@@ -24,3 +28,12 @@ export const exampleProperty = {
   image_path: "",
   updated_at: "2026-11-25T08:00:00.000000Z",
 };
+
+// Use Query's own result shape so mocks stay checked when the library changes.
+export function querySuccess<T>(data: T) {
+  return new QueryObserver(new QueryClient(), {
+    queryKey: ["fixture"],
+    queryFn: async () => data,
+    initialData: data,
+  }).getCurrentResult();
+}

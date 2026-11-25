@@ -1,5 +1,5 @@
 import { act, screen, waitFor } from "@testing-library/react";
-import { renderQuery, exampleProperty } from "../test/render";
+import { renderQuery, exampleProperty, querySuccess } from "../test/render";
 import { LiveUpdates } from "./LiveUpdates";
 import { useAuth } from "../features/auth";
 import {
@@ -21,9 +21,7 @@ it("patches existing watched values and announces an incoming update", async () 
   } as unknown as ReturnType<typeof useAuth>);
   jest
     .mocked(useWatchlist)
-    .mockReturnValue({ data: { properties: [exampleProperty] } } as ReturnType<
-      typeof useWatchlist
-    >);
+    .mockReturnValue(querySuccess({ properties: [exampleProperty] }));
   let received: (change: Change) => void = () => {};
   jest
     .mocked(useWatchlistSubscription)
@@ -50,6 +48,14 @@ it("patches existing watched values and announces an incoming update", async () 
       "A watched property has a new price or status.",
     ),
   );
+  await act(async () => {
+    received({
+      id: 1,
+      price_cents: 1,
+      status: "sold",
+      updated_at: exampleProperty.updated_at,
+    });
+  });
   expect(
     client.getQueryData<{ properties: (typeof exampleProperty)[] }>([
       "properties",

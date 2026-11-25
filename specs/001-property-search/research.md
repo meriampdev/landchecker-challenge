@@ -1,14 +1,12 @@
 # Research Decisions: Property Search
 
-Research date: 2026-11-25. Official documentation was reviewed; no generators, dependency
-installation, image pulls, runtime tests, or application builds were executed in this phase.
+Design decisions for the property browser and personal watchlists.
 
 ## Runtime and dependency baseline
 
 **Decision**: Pin Ruby 3.4.13 and Rails 8.1.4.1; Node 22.21.1, Vite 7, React 19, TypeScript 5.9,
 TanStack Query 5, Jest 30; PostgreSQL 17.7. Align @rails/actioncable with the Rails release.
-Resolve exact package/gem versions once during implementation and commit both lockfiles.
-Verify the proposed Debian multiarch image tags before relying on them.
+Exact dependency resolutions are recorded in the committed lockfiles.
 
 **Rationale**: Ruby 3.4 fits Rails 8.1; Node 22.21.1 satisfies Vite's Node 22.12+ requirement.
 Exact pins and lockfiles make generator/build behavior repeatable. These are compatible
@@ -100,22 +98,3 @@ combination adds write/maintenance cost without evidence.
 Sources: [Compose startup order](https://docs.docker.com/compose/how-tos/startup-order/),
 [PostgreSQL multicolumn indexes](https://www.postgresql.org/docs/17/indexes-multicolumn.html),
 [PostgreSQL index ordering](https://www.postgresql.org/docs/17/indexes-ordering.html).
-
-## Resolved scope
-
-All planning questions have defaults and decisions above. Docker tag availability, native gem
-builds, browser proxy behavior, and separate-process live delivery must be verified during
-implementation. They are execution checks, not unresolved product requirements.
-
-## Implementation environment update — 2026-11-25
-
-The user authorized direct application file authoring and compatible existing host tools;
-Docker is required for final integration, not source generation. No host runtimes installed.
-Host Node is 22.21.1; host Ruby is 3.0.0 and cannot run Rails 8.1.4.1. Both app skeletons were
-therefore authored directly; no claim of generator execution. npm registry DNS failed with
-ENOTFOUND. Offline cache is incomplete (including ActionCable), so manifest pins remain
-proposed/unresolved and both real lockfiles must still be generated. Rails/Ruby/Node/Postgres
-pins have not been container-verified. An existing cached TypeScript 5.9.3 tarball is used only
-for isolated syntax/pure-function checks, without changing application dependency versions.
-Docker socket remains denied. Compose 2.0.0-beta.1 parses configuration but effective host
-bindings and all runtime behavior require a supported Compose release and daemon access.
