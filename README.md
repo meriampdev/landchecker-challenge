@@ -1,4 +1,3 @@
-````markdown
 # Landchecker Homes
 
 A property browser with combined location, price, bedroom and property-type filters, listing details, personal watchlists and live price/status updates. Public browsing requires no account. Prices are in AUD; the development dataset contains 48 Australian listings.
@@ -87,4 +86,3 @@ This is particularly useful when working with an AI coding assistant. The specif
 Spec Kit supports my development process; it does not replace engineering judgment or verification. I use the documented requirements to guide implementation, review the resulting code and check behavior against the intended user flows. The planning files remain in the repository so reviewers can follow the reasoning behind the implementation.
 
 Spec Kit is not required to run the application.
-````
