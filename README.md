@@ -12,7 +12,8 @@ Install Docker Engine/Desktop with a stable Docker Compose v2 release. From the 
 docker compose up --build
 ```
 
-### If startup fails
+> [!NOTE]
+> If startup fails..
 
 Docker development and automatic reload
 
