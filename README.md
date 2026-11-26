@@ -1,146 +1,90 @@
+````markdown
 # Landchecker Homes
 
-A property browser with combined location, price, bedroom and property-type filters,
-listing details, personal watchlists and live price/status updates. Public browsing
-requires no account. Prices are in AUD; the development dataset contains 48 Australian listings.
+A property browser with combined location, price, bedroom and property-type filters, listing details, personal watchlists and live price/status updates. Public browsing requires no account. Prices are in AUD; the development dataset contains 48 Australian listings.
 
 ## Run locally
 
-Install Docker Engine/Desktop with a stable Docker Compose v2 release. From the repository root:
+Install Docker Engine/Desktop with Docker Compose v2. From the repository root, run:
 
 ```sh
 docker compose up --build
 ```
 
-> [!NOTE]
-> If startup fails..
+Once the services are ready, open **http://localhost:5173**.
 
-Docker development and automatic reload
+Docker handles application dependencies, database setup and demo data. No host Ruby, Node.js or PostgreSQL installation or `.env` file is required. The first build requires internet access, and ports 3000 and 5173 must be available.
 
-Rails and Vite reload source changes automatically.
-
-**On macOS, Docker Desktop needs access to the project folder.** If startup fails with `exec user process caused: operation not permitted` or `EPERM` opening `/app/package.json`, check folder permissions. Both services mount the checkout into `/app`, so restricted access can affect them even after a successful build.
-
-1. Open **System Settings → Privacy & Security → Files and Folders** and allow Docker Desktop access to the project’s location, if listed.
-2. In **Docker Desktop → Settings → Resources → File Sharing**, ensure the checkout’s parent directory is shared.
-3. Restart Docker Desktop, then run:
-
-```sh
-docker compose up --build --force-recreate
-```
-
-Alternatively, move the checkout outside protected Desktop/Documents folders—for example, to `~/Projects/landchecker-challenge`—and ensure that location is shared with Docker Desktop.
-
-If frontend edits are not detected, enable polling:
-
-```sh
-VITE_USE_POLLING=true docker compose up -d --force-recreate frontend
-```
-
-After changing frontend dependencies, rebuild and refresh the dependency volume:
-
-```sh
-docker compose up -d --build --force-recreate --renew-anon-volumes frontend
-```
-
-Open **http://localhost:5173** after the services are ready. No host Ruby, Node or
-PostgreSQL installation or `.env` file is required. The first build needs registry
-access. Ports 3000 and 5173 must be available. On macOS, Docker Desktop must have
-file-sharing access to the checkout.
+Use either demo account to try personal watchlists:
 
 | Email | Password |
 | --- | --- |
 | alex@example.com | DemoPassword123! |
 | sam@example.com | DemoPassword123! |
 
-Startup prepares the database and creates missing demo records. Seeds preserve
-existing account, property and watchlist changes. `docker compose down` preserves
-the named PostgreSQL volume; `docker compose down -v` deletes it.
+### If startup fails…
 
-Source mounts support Rails reload and Vite HMR. If Docker Desktop misses frontend
-edits, use `VITE_USE_POLLING=true docker compose up -d --force-recreate frontend`.
-After changing frontend dependencies, rebuild with
-`docker compose up -d --build --renew-anon-volumes frontend`.
+On macOS, if startup fails with `exec user process caused: operation not permitted` or `EPERM` opening `/app/package.json`, check Docker Desktop’s access to the checkout. Both application services mount the source into `/app`, so folder restrictions can affect them even when the images build successfully.
 
-## Architecture
+1. Open **System Settings → Privacy & Security → Files and Folders** and allow Docker Desktop access to the project’s location, if listed.
+2. In **Docker Desktop → Settings → Resources → File Sharing**, ensure the checkout’s parent directory is shared.
+3. Restart Docker Desktop, then run:
 
-- **Backend:** Rails API, PostgreSQL, bcrypt and cookie sessions. A query object
-  validates and combines search filters with stable 12-item pagination. Public
-  serializers expose listing fields only. Mutations require CSRF tokens and matching
-  origins; watchlists are scoped to the authenticated user.
-- **Frontend:** React/TypeScript with `auth`, `properties` and `watchlist` features,
-  colocated CSS modules and tests. TanStack Query owns server state; Context owns
-  authentication. Hash routes preserve validated browse filters and pagination
-  through details, authentication and deferred saves. Back/Forward reads URL state.
-- **Watchlists:** 12 listings per page, eager-loaded relationships and a compact
-  saved-ID list for accurate hearts across pages. A unique user/property index makes
-  repeated and concurrent saves idempotent. Reverse relationship indexes support
-  broadcast-recipient lookup.
-- **Live updates:** One ActionCable subscription per signed-in client, using the
-  PostgreSQL adapter across processes. Committed price/status changes go to current
-  watchers. Reconnect refetches current values; timestamp checks discard stale events.
-  Logout closes user connections; active sockets close at session expiry.
-- **Development:** Compose runs PostgreSQL, Rails and Vite. HTTP and WebSocket requests
-  use Vite's same-origin proxy. Backend health gates frontend startup. Both dependency
-  lockfiles and the generated Rails schema are included.
+   ```sh
+   docker compose up --build --force-recreate
+   ```
 
-## Tests and build
-
-With Compose running, execute from the repository root:
-
-```sh
-docker compose exec -e RAILS_ENV=test -e DATABASE_URL=postgresql://landchecker:landchecker@db:5432/landchecker_test backend bin/rails db:prepare
-docker compose exec -e RAILS_ENV=test -e DATABASE_URL=postgresql://landchecker:landchecker@db:5432/landchecker_test backend bundle exec rspec
-docker compose exec backend bin/rails zeitwerk:check
-docker compose exec frontend npm test -- --runInBand
-docker compose exec frontend npm run typecheck
-docker compose exec frontend npm run build
-```
-
-RSpec requires a database name ending in `_test` and never seeds demo users.
-Tests cover filtering, pagination, authentication, CSRF, isolation, concurrent saves,
-authentication return flows and live cache updates.
-
-For a real transport check, with Node 22 installed on the host:
-
-```sh
-npm --prefix frontend ci
-node frontend/scripts/verify-realtime.cjs
-```
-
-This uses real authenticated WebSockets through Vite and separate Rails writer
-processes. It temporarily changes the first listing and demo watches, then restores
-them. Run against idle demo data. Set `BACKEND_CONTAINER` if Compose uses a different
-container name, and `APP_URL` if using a different allowed origin.
+Alternatively, move the checkout outside protected Desktop/Documents folders—for example, to `~/Projects/landchecker-challenge`—and ensure that location is shared with Docker Desktop.
 
 ## Real-time demonstration
 
-1. Sign in as Alex and open Watchlist. In another browser profile, sign in as Sam.
-   Ensure both users save **Harbour View House**, **10 Demo Street**.
-2. Keep both watchlists open and run:
+1. Sign in as Alex and open Watchlist. In another browser profile or incognito window, sign in as Sam. Ensure both users save **Harbour View House**, **10 Demo Street**.
+2. Keep both watchlists open and run this command from the repository root:
 
    ```sh
    docker compose exec backend bin/rails demo:update_property
    ```
 
-   Both windows update without refresh: the price increases by AUD 1,000 and the
-   status changes. Repeat to see another change.
-3. Remove Sam's watch and repeat. Only Alex receives subsequent updates for that
-   property. Log out to clear private data and disconnect live updates.
-4. Interrupt the network, run an update, then reconnect. The client displays a
-   connection warning and reconciles current values when its socket reconnects.
+   Both windows update without refreshing: the price increases by AUD 1,000 and the status changes. Repeat the command to see another change.
 
-## Tradeoffs
+3. Remove the property from Sam’s watchlist and run the command again. Only Alex receives subsequent updates for that property.
+4. To check reconnection, take one browser session offline, run an update, then reconnect. The client displays a connection warning while disconnected and fetches current values when its socket reconnects.
+5. Log out to clear private cached data and disconnect live updates.
 
-This is a local coding-challenge application, with synthetic listings and illustrative
-fallback artwork. Location search uses escaped `ILIKE` substring matching. A sequential
-scan is appropriate for 48 rows; a larger dataset should add `pg_trgm` GIN indexes on
-address and suburb. Price, type/price, bedrooms and relationship queries have B-tree
-indexes. The saved-ID payload grows with watchlist membership, while listing payloads
-and rendering are bounded.
+## My approach
 
-Delivery is best effort after commit, with reconciliation rather than durable event
-history. CookieStore logout does not revoke copied cookies or other HTTP sessions;
-server-side revocation and login rate limiting would be appropriate for deployment.
-The supplied credentials and secret are development defaults. Production hosting,
-TLS, secret management and deployment operations are outside this challenge's scope.
+I approached the challenge around three connected flows: finding properties, saving them to a personal watchlist, and receiving updates when a saved property’s price or status changes. React handles presentation and navigation, while Rails handles validation, authentication, authorization and persistence. This keeps business rules enforced on the server while allowing the interface to evolve independently.
+
+On the frontend, TanStack Query manages API data and caching, while React Context manages authentication. Browse filters and pagination are reflected in the URL so navigation preserves the user’s search. Loading, empty, error and save states are handled alongside the main flows. Signing out clears private cached data and closes the live connection.
+
+On the backend, controllers handle requests, models define validations and relationships, and a dedicated query object combines search filters and pagination. Database constraints enforce relationships and unique watchlist entries. Cookie sessions and CSRF protection support authenticated actions, and watchlist access is scoped to the current user.
+
+For live updates, Action Cable sends committed price and status changes to users watching the affected property. The PostgreSQL adapter supports broadcasts across Rails processes without adding Redis to this challenge. The frontend updates its cached data, checks event timestamps and refetches current values when the connection returns, accounting for changes that may have happened while a client was offline.
+
+### Project structure
+
+| Location | Responsibility |
+| --- | --- |
+| `frontend/src/app/` | Application composition, navigation and live-update integration. |
+| `frontend/src/features/` | `auth`, `properties` and `watchlist` modules, including feature-specific API calls, hooks and types. Substantial components keep styles and tests alongside them. |
+| `frontend/src/shared/` | Utilities reused across features, including HTTP and navigation helpers. |
+| `backend/app/` | Rails controllers, models, search queries and Action Cable channels, organized by responsibility. |
+| `backend/db/` | Database migrations, schema and demo seeds. |
+| `backend/spec/` | Backend tests organized around the behavior they exercise. |
+| `specs/001-property-search/` | Feature requirements, implementation plan, data model, API and real-time contracts, and task breakdown. |
+| `.specify/` | Spec Kit configuration, templates and the project constitution. |
+| `.circleci/` | Frontend and backend build and verification pipeline. |
+| `compose.yaml` | Local PostgreSQL, Rails and Vite services, including startup health checks. |
+
+The frontend groups code by feature so related changes stay close together. Shared code is extracted when it is reused across features. The backend follows Rails conventions so responsibilities are easy to find without introducing a custom architecture. Each application owns its dependencies and Dockerfile; the repository root coordinates startup and documentation.
+
+### Why I used Spec Kit
+
+I used Spec Kit to turn the challenge requirements into an explicit specification, a technical plan and small implementation tasks before working through the code. The project constitution records standards such as feature-based organization, Rails conventions, server-side ownership checks and focused verification.
+
+This is particularly useful when working with an AI coding assistant. The specification provides a consistent reference for expected behavior, while the API and real-time contracts keep the frontend and backend aligned. The task breakdown makes progress and remaining work easier to review.
+
+Spec Kit supports my development process; it does not replace engineering judgment or verification. I use the documented requirements to guide implementation, review the resulting code and check behavior against the intended user flows. The planning files remain in the repository so reviewers can follow the reasoning behind the implementation.
+
+Spec Kit is not required to run the application.
+````
