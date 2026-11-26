@@ -1,0 +1,12 @@
+---
+name: frontend tests
+discover: node_modules/.bin/jest --listTests --runInBand
+run: JEST_JUNIT_OUTPUT_FILE="<< outputs.junit >>" JEST_JUNIT_ADD_FILE_ATTRIBUTE=true npm test -- --runInBand --reporters=default --reporters=jest-junit --runTestsByPath << test.atoms >>
+outputs:
+  junit: test-results/jest.xml
+---
+name: backend tests
+discover: find spec -type f -name '*_spec.rb' | sort
+run: bundle exec rspec --format RspecJunitFormatter --out "<< outputs.junit >>" << test.atoms >>
+outputs:
+  junit: test-results/rspec.xml

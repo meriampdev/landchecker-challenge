@@ -1,0 +1,75 @@
+version: 2.1
+
+functions:
+  setup-node: github.com/circleci-functions/setup-node@v0.6.0
+  setup-ruby: github.com/circleci-functions/setup-ruby@v0.3.0
+
+jobs:
+  frontend:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - setup-node:
+          with:
+            node-version: "22.21.1"
+      - setup-node/install-packages:
+          with:
+            app-dir: frontend
+      - run:
+          name: Build frontend
+          working_directory: frontend
+          command: npm run build
+      - run:
+          name: Test frontend
+          working_directory: frontend
+          command: circleci testsuite run "frontend tests"
+      - store_test_results:
+          path: frontend/test-results
+      - run:
+          name: Typecheck frontend
+          working_directory: frontend
+          command: npm run typecheck
+
+  backend:
+    docker:
+      - image: cimg/base:stable
+      - image: postgres:17.7-bookworm
+        environment:
+          POSTGRES_USER: landchecker
+          POSTGRES_DB: landchecker_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+    environment:
+      RAILS_ENV: test
+      TEST_DATABASE_URL: postgresql://landchecker@localhost:5432/landchecker_test
+    steps:
+      - checkout
+      - setup-ruby:
+          with:
+            ruby-version: "3.4.13"
+            working-directory: backend
+      - setup-ruby/install-gems:
+          with:
+            app-dir: backend
+      - run:
+          name: Prepare test database
+          working_directory: backend
+          command: |
+            ruby -rsocket -e '30.times { begin; TCPSocket.new("localhost", 5432).close; exit 0; rescue SystemCallError; sleep 1; end }; abort "PostgreSQL did not start"'
+            bin/rails db:prepare
+      - run:
+          name: Check Rails autoloading
+          working_directory: backend
+          command: bin/rails zeitwerk:check
+      - run:
+          name: Test backend
+          working_directory: backend
+          command: circleci testsuite run "backend tests"
+      - store_test_results:
+          path: backend/test-results
+
+workflows:
+  main:
+    jobs:
+      - frontend
+      - backend
