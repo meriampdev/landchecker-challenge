@@ -50,6 +50,56 @@ Alternatively, move the checkout outside protected Desktop/Documents folders—f
 4. To check reconnection, take one browser session offline, run an update, then reconnect. The client displays a connection warning while disconnected and fetches current values when its socket reconnects.
 5. Log out to clear private cached data and disconnect live updates.
 
+## Tests and checks
+
+Run these commands from the repository root with Docker running.
+
+### Start the services
+
+```sh
+docker compose up -d --build
+```
+
+### Backend tests
+
+Prepare the dedicated test database:
+
+```sh
+docker compose exec \
+  -e RAILS_ENV=test \
+  -e DATABASE_URL=postgresql://landchecker:landchecker@db:5432/landchecker_test \
+  backend bin/rails db:prepare
+```
+
+Run the RSpec suite:
+
+```sh
+docker compose exec \
+  -e RAILS_ENV=test \
+  -e DATABASE_URL=postgresql://landchecker:landchecker@db:5432/landchecker_test \
+  backend bundle exec rspec
+```
+
+Backend tests are located in `backend/spec/`.
+
+### Frontend tests
+
+```sh
+docker compose exec frontend npm test -- --runInBand
+```
+
+Frontend tests are colocated with the code in `frontend/src/` as `*.test.ts` and `*.test.tsx` files.
+
+### Additional checks
+
+```sh
+docker compose exec backend bin/rails zeitwerk:check
+docker compose exec frontend npm run typecheck
+docker compose exec frontend npm run build
+```
+
+These check Rails autoloading, TypeScript types and the frontend production build.
+
 ## My approach
 
 I approached the challenge around three connected flows: finding properties, saving them to a personal watchlist, and receiving updates when a saved property’s price or status changes. React handles presentation and navigation, while Rails handles validation, authentication, authorization and persistence. This keeps business rules enforced on the server while allowing the interface to evolve independently.
